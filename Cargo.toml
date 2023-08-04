@@ -8,11 +8,11 @@ edition = "2021"
 [dependencies]
 yew = { version = "0.20.0", features = ["csr"] }
 yew-router = "0.17"
-gloo-net = "0.3.1"
 serde = { version = "1.0", features = ["derive"] }
 wasm-bindgen-futures = "0.4.37"
 dotenv = "0.15.0"
-web-sys = "0.3.64"
+web-sys = { version = "0.3.64", features = ["HtmlInputElement"] }
+reqwest = { version = "0.11.18", features = ["json"] }
 
 wasm-logger = "0.2.0"
 log = "0.4.6"

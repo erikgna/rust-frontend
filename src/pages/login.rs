@@ -1,6 +1,6 @@
+use std::collections::HashMap;
 use log::info;
 use yew::prelude::*;
-use gloo_net::http::Request;
 use web_sys::HtmlInputElement;
 use serde::Deserialize;
 
@@ -47,31 +47,24 @@ pub fn login() -> Html {
     };
 
     let onclick = Callback::from(move |_| {        
-        info!("logar email: {}", email_val);
-        info!("logar password: {}", password_val);
-
-        wasm_bindgen_futures::spawn_local(async move {
-            let response = Request::post("http://localhost:3000/posts")
-                .header("Content-Type", "application/json")
-                .body("body")
-                .unwrap()                
+        let email = email_input_value.clone();
+        let password = password_input_value.clone();
+        wasm_bindgen_futures::spawn_local(async move {            
+            let mut map: HashMap<&str, String> = HashMap::new();
+            map.insert("email", email);            
+            map.insert("password", password);
+    
+            let client = reqwest::Client::new();
+            let res = client.post("http://localhost:8000/api/v1/login")
+                .json(&map)
                 .send()
-                .await
-                .unwrap();
-
-            let fetched_videos: Vec<Video> = Request::get("http://localhost:3000/posts")
-                .send()
-                .await
-                .unwrap()
-                .json()
-                .await
-                .unwrap();
-            
-            info!("Fetched videos: {:?}", fetched_videos);
-        })
+                .await;
+    
+            let json_response = res.unwrap().text().await.unwrap();
+    
+            info!("{}", json_response);
+        });
     });
-
-
 
     html! {
         <section class={classes!("flex", "h-screen")}>
@@ -89,16 +82,16 @@ pub fn login() -> Html {
 
                 <div class={classes!("mb-4", "w-full", "max-w-[700px]")}>
                     <label for="email" class={classes!("block", "text-sm", "font-semibold", "mb-2")}>{"Email"}</label>
-                    <input ref={email_input_node_ref} onchange={on_email_change} value={email_input_value} type="email" id="email" name="email" placeholder="Digite seu email" class={classes!("w-full", "px-3", "py-2", "border", "rounded", "focus:outline-none", "focus:ring", "focus:border-blue-300")} />
+                    <input ref={email_input_node_ref} onchange={on_email_change}  type="email" id="email" name="email" placeholder="Digite seu email" class={classes!("w-full", "px-3", "py-2", "border", "rounded", "focus:outline-none", "focus:ring", "focus:border-blue-300")} />
                 </div>
                 <div class={classes!("mb-2", "w-full", "max-w-[700px]")}>
                     <label for="password" class={classes!("block", "text-sm", "font-semibold", "mb-2")}>{"Senha"}</label>
-                    <input ref={password_input_node_ref} onchange={on_password_change} value={password_input_value} type="password" id="password" name="password" placeholder="Digite sua senha" class={classes!("w-full", "px-3", "py-2", "border", "rounded", "focus:outline-none", "focus:ring", "focus:border-blue-300")} />
+                    <input ref={password_input_node_ref} onchange={on_password_change} type="password" id="password" name="password" placeholder="Digite sua senha" class={classes!("w-full", "px-3", "py-2", "border", "rounded", "focus:outline-none", "focus:ring", "focus:border-blue-300")} />
                 </div>
 
                 <a href="#" class={classes!("text-blue-500", "text-sm", "mb-6")}>{ "Esqueceu sua senha?" }</a>
 
-                <button {onclick} type="button" class={classes!("bg-blue-500", "text-white", "font-semibold", "py-2", "px-4", "rounded", "hover:bg-blue-600", "focus:outline-none", "focus:ring", "focus:border-blue-300", "max-w-[700px]", "w-full")}>{ "Entrar" }</button>                
+                <button onclick={onclick} type="button" class={classes!("bg-blue-500", "text-white", "font-semibold", "py-2", "px-4", "rounded", "hover:bg-blue-600", "focus:outline-none", "focus:ring", "focus:border-blue-300", "max-w-[700px]", "w-full")}>{ "Entrar" }</button>                
 
                 <p class={classes!("text-sm", "mt-2")}>
                     { "Ainda não tem uma conta? "}
