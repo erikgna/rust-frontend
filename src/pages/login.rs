@@ -1,70 +1,103 @@
 use std::collections::HashMap;
+use gloo_storage::Storage;
 use log::info;
+use validator::Validate;
 use yew::prelude::*;
 use web_sys::HtmlInputElement;
-use serde::Deserialize;
+use gloo::storage::LocalStorage;
+use yew_router::prelude::{use_navigator, Link};
 
-#[derive(Clone, PartialEq, Deserialize, Debug)]
-struct Video {
-    id: usize,
-    title: String,
-    author: String,    
-}
+use crate::{Route, models::login::{Token, LoginForm}};
 
 #[function_component(Login)]
 pub fn login() -> Html {
     let email_input_node_ref = use_node_ref();
-    let email_input_value_handle = use_state(String::default);
-    let email_input_value = (*email_input_value_handle).clone();
-
     let password_input_node_ref = use_node_ref();
-    let password_input_value_handle = use_state(String::default);
-    let password_input_value = (*password_input_value_handle).clone();
+    let form = use_state(|| LoginForm::default());
 
-    let email_val = (*email_input_value_handle).clone();
-    let password_val = (*password_input_value_handle).clone();
+    let error_message = use_state(String::default);
+    let error_message_value = (*error_message).clone();    
 
     let on_email_change = {
         let email_input_node_ref = email_input_node_ref.clone();        
+        let cloned_form = form.clone();
         Callback::from(move |_| {
             let input = email_input_node_ref.cast::<HtmlInputElement>();
 
             if let Some(input) = input {                
-                email_input_value_handle.set(input.value());
+                cloned_form.set(
+                    LoginForm {
+                            email: input.value(),
+                            password: cloned_form.password.clone()
+                        }
+                );
             }
         })
     };
 
     let on_password_change = {
         let password_input_node_ref = password_input_node_ref.clone();        
+        let cloned_form = form.clone();
         Callback::from(move |_| {
             let input = password_input_node_ref.cast::<HtmlInputElement>();
 
             if let Some(input) = input {                
-                password_input_value_handle.set(input.value());
+                cloned_form.set(
+                    LoginForm {
+                            email: cloned_form.email.clone(),
+                            password: input.value(),
+                        }
+                );
             }
         })
     };
 
-    let onclick = Callback::from(move |_| {        
-        let email = email_input_value.clone();
-        let password = password_input_value.clone();
-        wasm_bindgen_futures::spawn_local(async move {            
-            let mut map: HashMap<&str, String> = HashMap::new();
-            map.insert("email", email);            
-            map.insert("password", password);
-    
-            let client = reqwest::Client::new();
-            let res = client.post("http://localhost:8000/api/v1/login")
-                .json(&map)
-                .send()
-                .await;
-    
-            let json_response = res.unwrap().text().await.unwrap();
-    
-            info!("{}", json_response);
-        });
-    });
+    let navigator = use_navigator().unwrap();
+    let on_submit = {
+        let cloned_navigator = navigator.clone();
+        let cloned_error_message = error_message.clone();        
+        let cloned_form = form.clone();                    
+
+        Callback::from(move |event: SubmitEvent| {
+            event.prevent_default();
+
+            match cloned_form.validate() {
+                Ok(_) => {},
+                Err(_) => {
+                    cloned_error_message.set("Email ou senha incorretos".to_string());
+                    return;
+                }                                        
+            }
+
+            let navigator = cloned_navigator.clone();
+            let error_message = cloned_error_message.clone();
+            let form = cloned_form.clone();
+
+            wasm_bindgen_futures::spawn_local(async move {                
+                let mut map: HashMap<&str, String> = HashMap::new();
+                map.insert("email", form.email.clone());            
+                map.insert("password", form.password.clone());
+        
+                let client = reqwest::Client::new();
+                let res = client.post("http://localhost:8000/api/v1/login")
+                    .json(&map)
+                    .send()
+                    .await;
+
+                match res {
+                    Ok(_) => {
+                        let token = res.unwrap().json::<Token>().await.unwrap();            
+                        LocalStorage::set("token", token.token.as_str()).ok();
+                        navigator.push(&Route::Home);
+                    }
+                    Err(e) => {
+                        error_message.set("Email ou senha incorretos".to_string());            
+                        info!("Error: {}", e);
+                    }
+                }        
+            });            
+        })
+    };
 
     html! {
         <section class={classes!("flex", "h-screen")}>
@@ -76,7 +109,7 @@ pub fn login() -> Html {
                     <button class={classes!("font-semibold", "text-white", "bg-transparent", "border", "border-white", "px-4", "py-2", "mr-4", "hover:text-blue-500", "hover:border-blue-500", "focus:outline-none", "focus:ring", "focus:border-blue-300", "transition-all", "duration-300")}>{ "Ver agenda" }</button>
                 </div>
             </div>            
-            <form class={classes!("w-1/2", "px-8", "flex", "flex-col", "justify-center", "items-start")}>
+            <form onsubmit={on_submit} class={classes!("w-1/2", "px-8", "flex", "flex-col", "justify-center", "items-start")}>
                 <h1 class={classes!("text-3xl", "font-bold", "mb-3")}>{ "Posturalle" }</h1>
                 <p class={classes!("text-sm", "text-gray-600", "mb-6")}>{ "Acesse sua conta para agendar uma consulta" }</p>
 
@@ -89,13 +122,16 @@ pub fn login() -> Html {
                     <input ref={password_input_node_ref} onchange={on_password_change} type="password" id="password" name="password" placeholder="Digite sua senha" class={classes!("w-full", "px-3", "py-2", "border", "rounded", "focus:outline-none", "focus:ring", "focus:border-blue-300")} />
                 </div>
 
-                <a href="#" class={classes!("text-blue-500", "text-sm", "mb-6")}>{ "Esqueceu sua senha?" }</a>
-
-                <button onclick={onclick} type="button" class={classes!("bg-blue-500", "text-white", "font-semibold", "py-2", "px-4", "rounded", "hover:bg-blue-600", "focus:outline-none", "focus:ring", "focus:border-blue-300", "max-w-[700px]", "w-full")}>{ "Entrar" }</button>                
+                if error_message_value.len() > 0 {
+                    <p class={classes!("text-red-500", "mb-2", "text-sm")}>{ error_message_value }</p>
+                }                
+                
+                <Link<Route> to={Route::ForgotPassword} classes="text-blue-500 text-sm mb-6">{ "Esqueceu sua senha?" }</Link<Route>>   
+                <button type="submit" class={classes!("bg-blue-500", "text-white", "font-semibold", "py-2", "px-4", "rounded", "hover:bg-blue-600", "focus:outline-none", "focus:ring", "focus:border-blue-300", "max-w-[700px]", "w-full")}>{ "Entrar" }</button>
 
                 <p class={classes!("text-sm", "mt-2")}>
                     { "Ainda não tem uma conta? "}
-                    <a href="#" class={classes!("text-blue-500", "font-semibold")}>{ "Cadastre-se aqui" }</a>
+                    <Link<Route> to={Route::Register} classes="text-blue-500 font-semibold">{ "Cadastre-se aqui" }</Link<Route>>                    
                 </p>
             </form>                              
         </section>
