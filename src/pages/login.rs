@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use gloo_storage::Storage;
 use log::info;
 use validator::Validate;
@@ -74,9 +73,7 @@ pub fn login() -> Html {
             let form = cloned_form.clone();
 
             wasm_bindgen_futures::spawn_local(async move {                
-                let mut map: HashMap<&str, String> = HashMap::new();
-                map.insert("email", form.email.clone());            
-                map.insert("password", form.password.clone());
+                let map = form.to_hashmap().clone(); 
         
                 let client = reqwest::Client::new();
                 let res = client.post("http://localhost:8000/api/v1/login")

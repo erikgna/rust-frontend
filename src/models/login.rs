@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use serde::Deserialize;
 use validator::Validate;
 
@@ -17,8 +18,11 @@ pub struct LoginForm{
     pub password: String
 }
 
-// impl LoginForm{
-//     pub fn validate(&self) -> bool {
-//         self.email.len() > 0 && self.password.len() > 0
-//     }
-// }
+impl LoginForm {
+    pub fn to_hashmap(&self) -> HashMap<&str, String> {
+        let mut map: HashMap<&str, String> = HashMap::new();        
+        map.insert("email", self.email.clone());
+        map.insert("password", self.password.clone());        
+        map
+    }
+}

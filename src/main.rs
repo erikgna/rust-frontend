@@ -1,16 +1,18 @@
 use yew::prelude::*;
 use yew_router::prelude::*;
 
-use crate::routes::{Route, switch};
+use crate::{routes::{Route, switch}, components::navbar::Navbar};
 
 mod pages;
 mod routes;
 mod models;
+mod components;
 
 #[function_component(App)]
 fn app() -> Html {
     html!{
         <BrowserRouter>
+            <Navbar />
             <Switch <Route> render={switch} />        
         </BrowserRouter>
     }

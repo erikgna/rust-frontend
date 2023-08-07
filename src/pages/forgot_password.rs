@@ -20,18 +20,18 @@ pub fn forgot_password() -> Html {
             </div>
             <form class={classes!("w-1/2", "px-8", "flex", "flex-col", "justify-center", "items-start")}>
                 <h1 class={classes!("text-3xl", "font-bold", "mb-3")}>{ "Posturalle" }</h1>
-                <p class={classes!("text-sm", "text-gray-600", "mb-6")}>{ "Cria uma conta para poder agendar consultas" }</p>
+                <p class={classes!("text-sm", "text-gray-600", "mb-6")}>{ "Ao apertar em recuperar senha, você receberá um email com um link para resetar sua senha." }</p>
 
                 <div class={classes!("mb-2", "w-full", "max-w-[700px]")}>
-                    <label for="first_name" class={classes!("block", "text-sm", "font-semibold", "mb-2")}>{"Primeiro nome"}</label>
-                    <input type="text" id="first_name" name="first_name" placeholder="Digite o seu primeiro nome" class={classes!("w-full", "px-3", "py-2", "border", "rounded", "focus:outline-none", "focus:ring", "focus:border-blue-300")} />
+                    <label for="email" class={classes!("block", "text-sm", "font-semibold", "mb-2")}>{"Email"}</label>
+                    <input type="email" id="email" name="email" placeholder="Digite seu email" class={classes!("w-full", "px-3", "py-2", "border", "rounded", "focus:outline-none", "focus:ring", "focus:border-blue-300")} />
                 </div>                
 
-                <button {onclick} class={classes!("bg-blue-500", "text-white", "font-semibold", "py-2", "px-4", "rounded", "hover:bg-blue-600", "focus:outline-none", "focus:ring", "focus:border-blue-300", "max-w-[700px]", "w-full")}>{ "Cadastrar" }</button>
+                <button {onclick} class={classes!("bg-blue-500", "text-white", "font-semibold", "py-2", "px-4", "rounded", "hover:bg-blue-600", "focus:outline-none", "focus:ring", "focus:border-blue-300", "max-w-[700px]", "w-full")}>{ "Recuperar senha" }</button>
 
                 <p class={classes!("text-sm", "mt-2")}>
                     { "Já tem uma conta? "}
-                    <a href="#" class={classes!("text-blue-500", "font-semibold")}>{ "Entre aqui" }</a>
+                    <Link<Route> to={Route::Login} classes="text-blue-500 font-semibold">{ "Entre aqui" }</Link<Route>>                    
                 </p>
             </form>              
         </section>
